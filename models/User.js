@@ -1,11 +1,12 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
+import Joi from 'joi';
 
 const userSchema = new mongoose.Schema(
     {
         first_name: {
             type: String,
-            requried: true,
+            required: true,
         },
         last_name: {
             type: String,
@@ -39,5 +40,12 @@ userSchema.methods.checkPassword = async function (enteredPassword) {
 };
 
 const User = mongoose.model('User', userSchema);
+
+export const userValidator = Joi.object({
+    first_name: Joi.string().required(),
+    last_name: Joi.string().required(),
+    email: Joi.string().required(),
+    password: Joi.string().min(8).max(20).required(),
+});
 
 export default User;

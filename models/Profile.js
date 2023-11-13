@@ -40,6 +40,7 @@ export const profileValidator = Joi.object({
         country: Joi.string(),
         state_province: Joi.string(),
     }),
+    profile_image: Joi.string(),
     bio: Joi.string().required(),
     hobbies: Joi.array().items(Joi.string()),
     favorite_cuisines: Joi.array().items(Joi.string()),

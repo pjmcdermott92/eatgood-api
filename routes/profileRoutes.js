@@ -1,6 +1,11 @@
 import express from 'express';
 import { authenticate } from '../middleware/authMiddleware.js';
-import { createOrUpdateProfile, getAllProfiles, getFavoritedRecipes, getOneProfileByUserId } from '../controllers/profileControllers.js';
+import {
+    createOrUpdateProfile,
+    getAllProfiles,
+    getFavoritedRecipes,
+    getOneProfileByUserId,
+} from '../controllers/profileControllers.js';
 
 const router = express.Router();
 

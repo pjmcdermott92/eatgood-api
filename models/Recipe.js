@@ -58,7 +58,7 @@ const recipeSchema = new Schema(
                 },
             },
         ],
-        avarage_rating: {
+        average_rating: {
             type: Number,
             default: 0,
         },
@@ -87,7 +87,7 @@ recipeSchema.pre('save', function (next) {
         return value;
     }, 0);
 
-    this.avarage_rating = Math.round((totalRatingsValue / ratingsCount) * 2) / 2 || 0;
+    this.average_rating = Math.round((totalRatingsValue / ratingsCount) * 2) / 2 || 0;
     next();
 });
 
@@ -102,6 +102,7 @@ export const recipeValidator = Joi.object({
     cook_time: Joi.number(),
     ingredients: Joi.array().items(Joi.string()),
     preparation_instructions: Joi.array().items(Joi.string()),
+    image_uri: Joi.string().required(),
 });
 
 export default Recipe;

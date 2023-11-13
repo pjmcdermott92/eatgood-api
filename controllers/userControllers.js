@@ -1,23 +1,21 @@
 import asyncHandler from '../middleware/asyncHandler.js';
 import errorResponse from '../middleware/errorHandler.js';
-import User from '../models/User.js';
+import User, { userValidator } from '../models/User.js';
 
 /**
  * @ROUTE   POST    /api/users/register
  * @DESC    Register a new User
  * @ACCESS  Public
  */
-export const registerUser = asyncHandler(async (req, res, next) => {
-    const { first_name, last_name, email, password } = req.body;
+export const registerUser = asyncHandler(async (req, _res, next) => {
+    await userValidator.validateAsync(req.body);
 
-    const userExists = await User.findOne({ email: email.toLowerCase() });
-    if (userExists) return next(errorResponse('Email is already reigstered', 400));
+    const userExists = await User.findOne({ email: req.body.email.toLowerCase() });
+    if (userExists) return next(errorResponse('Email is already registered', 400));
 
     const user = await User.create({
-        first_name,
-        last_name,
-        email: email.toLowerCase(),
-        password,
+        ...req.body,
+        email: req.body.email.toLowerCase(),
     });
 
     if (!user) return next(errorResponse('Invalid user data', 400));
@@ -31,9 +29,10 @@ export const registerUser = asyncHandler(async (req, res, next) => {
  * @DESC    Login a User
  * @ACCESS  Public
  */
-export const authUser = asyncHandler(async (req, res, next) => {
+export const authUser = asyncHandler(async (req, _res, next) => {
     const { email, password } = req.body;
-    if (!email || !password) return next(errorResponse('Email Address and Password are required', 400));
+    if (!email || !password)
+        return next(errorResponse('Email Address and Password are required', 400));
 
     const user = await User.findOne({ email: email.toLowerCase() });
 
@@ -60,5 +59,5 @@ export const changePassword = asyncHandler(async (req, res, next) => {
     req.user.password = newPassword;
     await req.user.save();
 
-    res.josn({ success: true });
+    res.json({ success: true });
 });

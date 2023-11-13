@@ -9,9 +9,10 @@ const app = express();
 const db = new Database();
 db.connect();
 
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(cookieParser());
+app.use('/uploads', express.static('public/uploads'));
 
 app.use('/api', apiRoutes);
 

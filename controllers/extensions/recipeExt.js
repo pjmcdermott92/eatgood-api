@@ -2,7 +2,7 @@ import asyncHandler from '../../middleware/asyncHandler.js';
 import errorResponse from '../../middleware/errorHandler.js';
 import Recipe from '../../models/Recipe.js';
 
-export const setRecipeToReq = asyncHandler(async (req, res, next) => {
+export const setRecipeToReq = asyncHandler(async (req, _res, next) => {
     req.recipe = await Recipe.findById(req.params.recipeId);
     if (!req.recipe) return next(errorResponse('Recipe not found', 404));
     next();
@@ -20,7 +20,7 @@ export const formatRecipeData = (recipeData) => {
         _id: recipeData._id,
         title: recipeData.title,
         created_by: recipeData.created_by,
-        image_url: recipeData.image_url,
+        image_url: recipeData.image_uri,
         description: recipeData.description,
         tags: recipeData.tags,
         serves: recipeData.serves,

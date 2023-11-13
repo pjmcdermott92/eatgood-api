@@ -1,6 +1,7 @@
 import asyncHandler from '../middleware/asyncHandler.js';
 import errorResponse from '../middleware/errorHandler.js';
 import Recipe, { recipeValidator } from '../models/Recipe.js';
+import uploadImage, { deleteImage } from '../middleware/imageUploader.js';
 import { formatRecipeData, userIsCreator } from './extensions/recipeExt.js';
 
 /**
@@ -14,11 +15,15 @@ export const addNewRecipe = asyncHandler(async (req, res, next) => {
     const newRecipe = await Recipe.create({
         ...req.body,
         created_by: req.user._id,
+        image_uri: req.body.image_uri,
     });
 
-    if (!newRecipe) return next(errorResponse('Invalid data', 400));
+    if (!newRecipe) {
+        deleteImage(`public${req.body.image_uri}`);
+        return next(errorResponse('Invalid data', 400));
+    }
 
-    await newRecipe.populate('created_by', 'first_name last_name');
+    await newRecipe.populate('created_by', 'first_name last_name profile_image');
 
     res.status(201).json({ success: true, data: formatRecipeData(newRecipe._doc) });
 });
@@ -30,7 +35,7 @@ export const addNewRecipe = asyncHandler(async (req, res, next) => {
  */
 export const getAllRecipes = asyncHandler(async (_req, res) => {
     const recipes = await Recipe.find()
-        .select('title created_by image_uri tags serves avarage_rating favorite_count')
+        .select('title created_by image_uri tags serves average_rating favorite_count')
         .populate('created_by', 'first_name last_name');
 
     res.status(200).json({ success: true, data: recipes });
@@ -57,10 +62,19 @@ export const editRecipe = asyncHandler(async (req, res, next) => {
 
     await recipeValidator.validateAsync(req.body);
 
-    const updatedRecipe = await Recipe.findByIdAndUpdate(req.params.recipeId, req.body, { new: true }).populate(
-        'created_by',
-        'first_name last_name'
-    );
+    if (req.body.image_uri && req.body.image_uri !== req.recipe.image_uri) {
+        deleteImage(`public${req.recipe.image_uri}`);
+    }
+
+    await req.recipe.populate('created_by', 'first_name last_name image_url');
+
+    const updatedRecipe = await Recipe.findByIdAndUpdate(
+        req.params.recipeId,
+        { ...req.body, image_uri: req.body.image_uri },
+        {
+            new: true,
+        }
+    ).populate('created_by', 'first_name last_name image_url');
     res.status(200).json({ success: true, data: formatRecipeData(updatedRecipe._doc) });
 });
 
@@ -70,12 +84,17 @@ export const editRecipe = asyncHandler(async (req, res, next) => {
  * @ACCESS  Protected
  */
 export const toggleFavoriteRecipe = asyncHandler(async (req, res, next) => {
-    if (userIsCreator(req.recipe, req.user)) return next(errorResponse('Users cannot favorite their own recipes', 403));
+    if (userIsCreator(req.recipe, req.user))
+        return next(errorResponse('Users cannot favorite their own recipes', 403));
 
-    const isFavorited = req.recipe.favorited_by.some((user) => user.toString() === req.user._id.toString());
+    const isFavorited = req.recipe.favorited_by.some(
+        user => user.toString() === req.user._id.toString()
+    );
 
     if (isFavorited) {
-        req.recipe.favorited_by = req.recipe.favorited_by.filter((user) => user.toString() !== req.user._id.toString());
+        req.recipe.favorited_by = req.recipe.favorited_by.filter(
+            user => user.toString() !== req.user._id.toString()
+        );
         req.recipe.favorite_count--;
     } else {
         req.recipe.favorited_by.unshift(req.user._id);
@@ -99,13 +118,15 @@ export const toggleFavoriteRecipe = asyncHandler(async (req, res, next) => {
  * @ACCESS  Protected
  */
 export const rateRecipe = asyncHandler(async (req, res, next) => {
-    if (userIsCreator(req.recipe, req.user)) return next(errorResponse('Users cannot rate their own recipes', 403));
+    if (userIsCreator(req.recipe, req.user))
+        return next(errorResponse('Users cannot rate their own recipes', 403));
 
-    if (req.recipe.ratings.some((rating) => rating.user.toString() == req.user._id.toString())) {
+    if (req.recipe.ratings.some(rating => rating.user.toString() == req.user._id.toString())) {
         return next(errorResponse('User has already rated this recipe', 400));
     }
 
-    if (!req.body.rating) return next(errorResponse('Please provide a rating between 1 and 5', 400));
+    if (!req.body.rating)
+        return next(errorResponse('Please provide a rating between 1 and 5', 400));
 
     req.recipe.ratings.unshift({ user: req.user._id, value: req.body.rating });
     await req.recipe.save();
@@ -128,5 +149,6 @@ export const deleteRecipe = asyncHandler(async (req, res, next) => {
     if (!userIsCreator(req.recipe, req.user)) return next(errorResponse('Not Authorized', 403));
 
     await Recipe.findByIdAndDelete(req.params.recipeId);
+    deleteImage(`public${req.recipe.image_uri}`);
     res.status(200).json({ success: true, data: req.recipe._id });
 });
