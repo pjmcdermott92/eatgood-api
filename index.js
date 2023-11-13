@@ -1,5 +1,6 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import Database from './Database.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import config from './config.js';
@@ -12,6 +13,7 @@ db.connect();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(cors(config.cors));
 app.use('/uploads', express.static('public/uploads'));
 
 app.use('/api', apiRoutes);

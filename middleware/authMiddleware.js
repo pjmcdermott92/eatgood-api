@@ -4,7 +4,7 @@ import asyncHandler from './asyncHandler.js';
 import errorResponse from './errorHandler.js';
 import User from '../models/User.js';
 
-const COOKIE_NAME = 'auth_token';
+const COOKIE_NAME = 'ge_auth_token';
 const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 const JWT_EXP = '7d'; // Seven Days
 const NOT_AUTHORIZED = errorResponse('Not Authorized', 403);
